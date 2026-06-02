@@ -234,6 +234,7 @@ list(APPEND IDF_COMPONENTS
     bootloader_support
     #bt
     driver
+    mdns
     esp_driver_tsens
     esp_adc
     esp_app_format
