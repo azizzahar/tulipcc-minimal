@@ -1,0 +1,6 @@
+{
+    "mcu": "esp32s3",
+    "product": "AMYsynth N16R8",
+    "vendor": "custom",
+    "features": []
+}

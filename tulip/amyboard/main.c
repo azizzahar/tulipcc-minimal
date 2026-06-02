@@ -95,7 +95,9 @@ TaskHandle_t tulip_mp_handle;
 TaskHandle_t idle_0_handle;
 TaskHandle_t idle_1_handle;
 TaskHandle_t sequencer_handle;
+#ifdef AMYBOARD
 TaskHandle_t cv_read_handle;
+#endif
 
 // For CPU usage
 unsigned long last_task_counters[MAX_TASKS];
@@ -126,10 +128,19 @@ float compute_cpu_usage(uint8_t debug) {
     const char* const tasks[] = {
          "IDLE0", "IDLE1", "Tmr Svc", "ipc0", "ipc1", "main", "wifi", "esp_timer", "sys_evt", "tiT",
          TULIP_MP_TASK_NAME,
+#ifdef AMYBOARD
          AMY_RENDER_TASK_NAME, AMY_FILL_BUFFER_TASK_NAME, CV_READ_TASK_NAME, 0
+#else
+         AMY_RENDER_TASK_NAME, AMY_FILL_BUFFER_TASK_NAME, 0
+#endif
     };
     const uint8_t cores[] = {0, 1, 0, 0, 1, 0, 0, 0, 1, 0, TULIP_MP_TASK_COREID,
-        AMY_RENDER_TASK_COREID, AMY_FILL_BUFFER_TASK_COREID, CV_READ_TASK_COREID};
+#ifdef AMYBOARD
+        AMY_RENDER_TASK_COREID, AMY_FILL_BUFFER_TASK_COREID, CV_READ_TASK_COREID
+#else
+        AMY_RENDER_TASK_COREID, AMY_FILL_BUFFER_TASK_COREID
+#endif
+    };
 
     uxArraySize = uxTaskGetNumberOfTasks();
     pxTaskStatusArray = pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) );
@@ -323,9 +334,11 @@ void boardctrl_startup(void) {
 }
 
 
+#ifdef AMYBOARD
 extern esp_err_t i2c_follower_init();
 extern void i2c_check_for_data();
 extern TaskHandle_t i2c_check_for_data_handle;
+#endif
 
 uint8_t * xStack;
 StaticTask_t static_mp_handle;
@@ -342,6 +355,7 @@ void app_main(void) {
     idle_0_handle = xTaskGetIdleTaskHandleForCPU(0);
     idle_1_handle = xTaskGetIdleTaskHandleForCPU(1);
 
+#ifdef AMYBOARD
     i2c_follower_init();
     xTaskCreatePinnedToCore(i2c_check_for_data, "i2c_check_for_data", 8192, NULL, 20, &i2c_check_for_data_handle, 0);
     fflush(stderr);
@@ -350,6 +364,7 @@ void app_main(void) {
     // Start the CV ADC reader task (reads ADS1115 over I2C, updates cached values)
     extern void cv_read_task(void *pvParameter);
     xTaskCreatePinnedToCore(cv_read_task, CV_READ_TASK_NAME, CV_READ_TASK_STACK_SIZE / sizeof(StackType_t), NULL, CV_READ_TASK_PRIORITY, &cv_read_handle, CV_READ_TASK_COREID);
+#endif
 
     fprintf(stderr,"Starting MicroPython on core %d\n", TULIP_MP_TASK_COREID);
     xTaskCreatePinnedToCore(mp_task, TULIP_MP_TASK_NAME, (TULIP_MP_TASK_STACK_SIZE) / sizeof(StackType_t), NULL, TULIP_MP_TASK_PRIORITY, &tulip_mp_handle, TULIP_MP_TASK_COREID);

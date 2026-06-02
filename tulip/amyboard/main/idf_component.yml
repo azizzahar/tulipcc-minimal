@@ -2,4 +2,4 @@
 dependencies:
   idf:
     version: ">=5.0.2"
-  espressif/mdns: "~1.1.0"
+
